@@ -18,7 +18,7 @@ TO DO:
 
 # instantiate parser
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--days", default=7, required=False, type=int, metavar="", help="Number of days ago")
+parser.add_argument("-d", "--days", default=6, required=False, type=int, metavar="", help="Number of days ago")
 parser.add_argument("-a", "--add", action="store_true", default=False, help="Add songs to queue")
 args = parser.parse_args()
 

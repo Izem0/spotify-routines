@@ -1,5 +1,5 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from prettytable import PrettyTable
 from spotify_module.refresh import Refresh
 
@@ -42,19 +42,16 @@ class Spotify:
 
         return self.favorite_artists
 
-    def get_new_releases(self, artists, n_days=7, print_table=True):
+    def get_new_releases(self, artists, n_days=6, print_table=True):
         print("Getting new releases ...")
         # get artist's new releases
-        new_releases = []
-        albums_ids = []
-        tracks_names = []
+        new_releases, albums_ids, tracks_names = [], [], []
         for artist_name, artist_id in artists.items():
             # request
             end_point = f"https://api.spotify.com/v1/artists/{artist_id}/albums"
             params = {'country': 'FR', 'limit': '50', "include_groups": "album,single,appears_on"}
             response = requests.get(end_point, headers=self.headers, params=params)
             response_json = response.json()
-            # pprint.pp(response_json)
 
             for item in response_json["items"]:
                 # get track info
@@ -64,14 +61,15 @@ class Spotify:
                 track_id = item["id"]
                 release_date_raw = item["release_date"]
                 track_name_raw = item["name"]
-                track_name = track_name_raw if len(track_name_raw) <= 50 else track_name_raw[:50]  # cut long names
+                track_name = track_name_raw[:50]  # cut long names
 
-                # get only new tracks (released less than n_days ago)
+                # some date are wrongly formatter (only the year)
                 release_date = datetime.strptime(release_date_raw, "%Y-%m-%d") \
                     if len(release_date_raw) > 4 \
                     else datetime.strptime(release_date_raw, "%Y")
                 delta = datetime.today() - release_date
 
+                # get tracks under certain conditions
                 if delta.days <= n_days \
                         and delta.days != -1 \
                         and track_name not in tracks_names \
@@ -85,7 +83,11 @@ class Spotify:
             pretty_table = PrettyTable()
             pretty_table.field_names = ["Artist", "Album group", "Album type", "Name", "Days ago"]
             pretty_table.add_rows(new_releases)
-            print(pretty_table)
+            print(pretty_table.get_string(sortby="Album group"))
+
+        # print some info
+        n_days_ago = datetime.today() - timedelta(8)
+        print(f"Found {len(new_releases)} new releases since {n_days_ago.strftime('%a. %d %B')}.")
 
         return albums_ids
 
@@ -97,7 +99,7 @@ class Spotify:
             end_point = f"https://api.spotify.com/v1/albums/{album_id}/tracks"
             response = requests.get(end_point, headers=self.headers, params={"market": "FR", "limit": "50"})
             response_json = response.json()
-            # pprint.pp(response_json)
+
             for item in response_json["items"]:
                 # get artists on the song
                 artists = [artist["name"] for artist in item["artists"]]
