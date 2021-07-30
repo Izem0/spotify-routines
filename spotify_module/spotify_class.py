@@ -1,4 +1,5 @@
 import requests
+import json
 from datetime import datetime, timedelta
 from prettytable import PrettyTable
 from spotify_module.refresh import Refresh
@@ -6,6 +7,9 @@ from spotify_module.refresh import Refresh
 
 class Spotify:
     def __init__(self):
+        self.user_id = "1181713624"
+        self.release_radar_id = "37i9dQZEVXbkf1UTJ14JFi"
+        self.release_radar_tracks = []
         self.spotify_token = Refresh().refresh()
         self.headers = {"Accept": "application/json",
                         "Content-type": "application/json",
@@ -77,7 +81,8 @@ class Spotify:
                         and artists != "Various Artists":
                     new_releases.append([artist_name, album_group, album_type, track_name, delta.days])
                     tracks_names.append(track_name)
-                    albums_ids.append(track_id)
+                    if album_group != "album":  # get only singles for later adding to playlist
+                        albums_ids.append(track_id)
 
         if print_table:
             pretty_table = PrettyTable()
@@ -86,14 +91,14 @@ class Spotify:
             print(pretty_table.get_string(sortby="Album group"))
 
         # print some info
-        n_days_ago = datetime.today() - timedelta(8)
+        n_days_ago = datetime.today() - timedelta(n_days)
         print(f"Found {len(new_releases)} new releases since {n_days_ago.strftime('%a. %d %B')}.")
 
         return albums_ids
 
     def get_tracks_from_albums(self, albums_ids):
         print("Getting tracks from albums ...")
-        tracks_uris = []
+        tracks_uris = {}
         for album_id in albums_ids:
             # request
             end_point = f"https://api.spotify.com/v1/albums/{album_id}/tracks"
@@ -108,7 +113,8 @@ class Spotify:
                 if len(set(self.favorite_artists.keys()).intersection(set(artists))) == 0:
                     continue
                 uri = item["uri"]
-                tracks_uris.append(uri)
+                name = item["name"]
+                tracks_uris[uri] = name
 
         return tracks_uris
 
@@ -123,8 +129,53 @@ class Spotify:
 
     def add_to_queue(self, tracks_uris, device_id):
         print("Adding to queue ...")
+
         # request
         end_point = "https://api.spotify.com/v1/me/player/queue"
-        for track_uri in tracks_uris:
-            requests.post(end_point, headers=self.headers, params={"uri": f"{track_uri}",
-                                                                   "device_id": f"{device_id}"})
+        for track_uri in tracks_uris:          # loop through tracks
+            params = {"uri": f"{track_uri}", "device_id": f"{device_id}"}
+            requests.post(end_point, headers=self.headers, params=params)
+
+    def create_playlist(self, playlist_name):
+        print("Creating playlist ...")
+
+        # request
+        end_point = f"https://api.spotify.com/v1/users/{self.user_id}/playlists"
+        data = {'name': playlist_name,
+                "public": "false"}
+        response = requests.post(end_point, headers=self.headers, data=json.dumps(data))
+        response_json = response.json()
+
+        return response_json["id"]
+
+    def get_songs_from_release_radar(self):
+        print("Getting songs from official release radar")
+
+        # request
+        end_point = f"https://api.spotify.com/v1/playlists/{self.release_radar_id}/tracks"
+        # params = {"fields": "items(track(name)"}
+        response = requests.get(end_point, headers=self.headers)
+        response_json = response.json()
+
+        # parse track names
+        release_radar_tracks_names = [item["track"]["album"].get("name")
+                                      for item in response_json["items"]
+                                      if item["track"] is not None]
+        return release_radar_tracks_names
+
+    def add_to_playlist(self, tracks_uris, playlist_id):
+        print("Adding to playlist ...")
+
+        # get new release already present in official release radar
+        release_radar_tracks_names = self.get_songs_from_release_radar()
+
+        # keep only uris not in release radar
+        tracks_uris_new = {uri for uri in tracks_uris.keys() if tracks_uris[uri] not in release_radar_tracks_names}
+
+        # make a long string of tracks uris
+        tracks_uris_list = ','.join(tracks_uris_new)
+
+        # request
+        end_point = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
+        params = {"uris": tracks_uris_list}
+        requests.post(end_point, headers=self.headers, params=params)
