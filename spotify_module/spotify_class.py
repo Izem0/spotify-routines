@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from prettytable import PrettyTable
 from spotify_module.refresh import Refresh
 
@@ -17,7 +17,7 @@ class Spotify:
         self.favorite_artists = {}
 
     def get_favorite_artists(self):
-        print("Getting favorite artists ...")
+        # print("Getting favorite artists ...")
         # setting request up
         params = {"type": "artist",
                   "limit": "50"}
@@ -46,8 +46,9 @@ class Spotify:
 
         return self.favorite_artists
 
-    def get_new_releases(self, artists, n_days=6, print_table=True):
-        print("Getting new releases ...")
+    def get_new_releases(self, artists, start_date="", end_date=""):
+        # print("Getting new releases ...")
+
         # get artist's new releases
         new_releases, albums_ids, tracks_names = [], [], []
         for artist_name, artist_id in artists.items():
@@ -58,46 +59,43 @@ class Spotify:
             response_json = response.json()
 
             for item in response_json["items"]:
+
+                release_date = item["release_date"]
+
+                if release_date < start_date or release_date > end_date:
+                    continue
+
                 # get track info
                 album_group = item["album_group"]
                 album_type = item["album_type"]
                 artists = item["artists"][0]["name"]
                 track_id = item["id"]
-                release_date_raw = item["release_date"]
+                release_date_formatted = datetime.strptime(release_date, '%Y-%m-%d').strftime('%a %d %b')
                 track_name_raw = item["name"]
                 track_name = track_name_raw[:50]  # cut long names
 
-                # some date are wrongly formatter (only the year)
-                release_date = datetime.strptime(release_date_raw, "%Y-%m-%d") \
-                    if len(release_date_raw) > 4 \
-                    else datetime.strptime(release_date_raw, "%Y")
-                delta = datetime.today() - release_date
-
                 # get tracks under certain conditions
-                if delta.days <= n_days \
-                        and delta.days != -1 \
-                        and track_name not in tracks_names \
+                if track_name not in tracks_names \
                         and album_type != "compilation" \
                         and artists != "Various Artists":
-                    new_releases.append([artist_name, album_group, album_type, track_name, delta.days])
+                    new_releases.append([artist_name, album_group, album_type, track_name, release_date_formatted])
                     tracks_names.append(track_name)
                     if album_group != "album":  # get only singles for later adding to playlist
                         albums_ids.append(track_id)
 
-        if print_table:
-            pretty_table = PrettyTable()
-            pretty_table.field_names = ["Artist", "Album group", "Album type", "Name", "Days ago"]
-            pretty_table.add_rows(new_releases)
-            print(pretty_table.get_string(sortby="Album group"))
+        pretty_table = PrettyTable()
+        pretty_table.field_names = ["Artist", "Album group", "Album type", "Name", "Release date"]
+        pretty_table.add_rows(new_releases)
+        print(pretty_table.get_string(sortby="Album group"))
 
         # print some info
-        n_days_ago = datetime.today() - timedelta(n_days)
-        print(f"Found {len(new_releases)} new releases since {n_days_ago.strftime('%a. %d %B')}.")
+        print(f"Found {len(new_releases)} new releases since "
+              f"{datetime.strptime(start_date, '%Y-%m-%d').strftime('%a %d %b')}.")
 
         return albums_ids
 
     def get_tracks_from_albums(self, albums_ids):
-        print("Getting tracks from albums ...")
+        # print("Getting tracks from albums ...")
         tracks_uris = {}
         for album_id in albums_ids:
             # request
@@ -128,7 +126,7 @@ class Spotify:
         return devices
 
     def add_to_queue(self, tracks_uris, device_id):
-        print("Adding to queue ...")
+        # print("Adding to queue ...")
 
         # request
         end_point = "https://api.spotify.com/v1/me/player/queue"
@@ -137,7 +135,7 @@ class Spotify:
             requests.post(end_point, headers=self.headers, params=params)
 
     def create_playlist(self, playlist_name):
-        print("Creating playlist ...")
+        # print("Creating playlist ...")
 
         # request
         end_point = f"https://api.spotify.com/v1/users/{self.user_id}/playlists"
@@ -149,7 +147,7 @@ class Spotify:
         return response_json["id"]
 
     def get_songs_from_release_radar(self):
-        print("Getting songs from official release radar")
+        # print("Getting songs from official release radar ...")
 
         # request
         end_point = f"https://api.spotify.com/v1/playlists/{self.release_radar_id}/tracks"
@@ -164,7 +162,7 @@ class Spotify:
         return release_radar_tracks_names
 
     def add_to_playlist(self, tracks_uris, playlist_id):
-        print("Adding to playlist ...")
+        # print("Adding to playlist ...")
 
         # get new release already present in official release radar
         release_radar_tracks_names = self.get_songs_from_release_radar()
