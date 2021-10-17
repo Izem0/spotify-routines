@@ -17,7 +17,7 @@ class Spotify:
         self.favorite_artists = {}
 
     def get_favorite_artists(self):
-        # print("Getting favorite artists ...")
+        print("Getting favorite artists ...")
         # setting request up
         params = {"type": "artist",
                   "limit": "50"}
@@ -47,7 +47,7 @@ class Spotify:
         return self.favorite_artists
 
     def get_new_releases(self, artists, start_date="", end_date=""):
-        # print("Getting new releases ...")
+        print("Getting new releases ...")
 
         # get artist's new releases
         new_releases, albums_ids, tracks_names = [], [], []
@@ -70,7 +70,7 @@ class Spotify:
                 album_type = item["album_type"]
                 artists = item["artists"][0]["name"]
                 track_id = item["id"]
-                release_date_formatted = datetime.strptime(release_date, '%Y-%m-%d').strftime('%a %d %b')
+                release_date_formatted = datetime.strptime(release_date, '%Y-%m-%d').strftime('%a %d %b.')
                 track_name_raw = item["name"]
                 track_name = track_name_raw[:50]  # cut long names
 
@@ -89,13 +89,14 @@ class Spotify:
         print(pretty_table.get_string(sortby="Album group"))
 
         # print some info
-        print(f"Found {len(new_releases)} new releases since "
-              f"{datetime.strptime(start_date, '%Y-%m-%d').strftime('%a %d %b')}.")
+        print(f"Found {len(new_releases)} new releases "
+              f"({datetime.strptime(start_date, '%Y-%m-%d').strftime('%a %d %b.')} - "
+              f"{datetime.strptime(end_date, '%Y-%m-%d').strftime('%a %d %b.')}).")
 
         return albums_ids
 
     def get_tracks_from_albums(self, albums_ids):
-        # print("Getting tracks from albums ...")
+        print("Getting tracks from albums ...")
         tracks_uris = {}
         for album_id in albums_ids:
             # request
@@ -135,7 +136,7 @@ class Spotify:
             requests.post(end_point, headers=self.headers, params=params)
 
     def create_playlist(self, playlist_name):
-        # print("Creating playlist ...")
+        print("Creating playlist ...")
 
         # request
         end_point = f"https://api.spotify.com/v1/users/{self.user_id}/playlists"
@@ -162,7 +163,7 @@ class Spotify:
         return release_radar_tracks_names
 
     def add_to_playlist(self, tracks_uris, playlist_id):
-        # print("Adding to playlist ...")
+        print("Adding songs to playlist ...")
 
         # get new release already present in official release radar
         release_radar_tracks_names = self.get_songs_from_release_radar()
