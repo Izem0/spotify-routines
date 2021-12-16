@@ -108,7 +108,7 @@ class Spotify:
                 # get artists on the song
                 artists = [artist["name"] for artist in item["artists"]]
 
-                # if no favorite artist is in the album, skip
+                # if no favorite artist is on the album, skip
                 if len(set(self.favorite_artists.keys()).intersection(set(artists))) == 0:
                     continue
                 uri = item["uri"]

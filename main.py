@@ -1,11 +1,11 @@
 """
-Date    : May, 2021
+Date    : May 2021
 Author  : Izem Mangione
 Email   : izem.mangione@gmail.com
 File    : main.py
 Software: PyCharm
 
-Description :
+Description : Getting new songs from my favorite artists.
 """
 import argparse
 from argparse import BooleanOptionalAction
