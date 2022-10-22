@@ -1,14 +1,20 @@
 """
 Description : Getting new songs from my favorite artists.
 """
-# from argparse import ArgumentParser, BooleanOptionalAction
+
 from datetime import datetime, timedelta
 from spotify_module.spotify_class import Spotify
+from dotenv import load_dotenv
+# from argparse import ArgumentParser, BooleanOptionalAction
 
 # TODO:
 # 1. print songs not "albums" in prettytable
 # 2. get_tracks_from_albums() -> regroup requests
 
+# load env variables
+load_dotenv()
+
+# set important variables
 add = True  # add to my spotify's playlists
 today_dt = datetime.today().date()
 today_str = today_dt.strftime("%Y-%m-%d")

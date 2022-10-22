@@ -3,3 +3,4 @@
 /__pycache__/
 curl.txt
 /test_script.py
+/.env
