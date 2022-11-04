@@ -1,124 +1,89 @@
 import requests
 import json
-from datetime import datetime
-from prettytable import PrettyTable
+import pandas as pd
 from spotify_module.refresh import Refresh
 
 
 class Spotify:
-    def __init__(self):
-        self.user_id = "1181713624"
-        self.release_radar_id = "37i9dQZEVXbkf1UTJ14JFi"
-        self.release_radar_tracks = []
-        self.spotify_token = Refresh().refresh()
+    def __init__(self, user_id, refresh_token, base64):
+        self.user_id = user_id
+        refresh = Refresh(refresh_token, base64)
+        self.spotify_token = refresh.refresh()
         self.headers = {"Accept": "application/json",
                         "Content-type": "application/json",
                         "Authorization": f"Bearer {self.spotify_token}"}
-        self.favorite_artists = {}
 
-    def get_favorite_artists(self):
-        print("Getting favorite artists ...")
-        # setting request up
-        params = {"type": "artist",
-                  "limit": "50"}
-        # make first request to get the number of artists I follow
-        end_point = "https://api.spotify.com/v1/me/following"
+    def get_favorite_artists(self) -> list[str]:
+        """Get ids of the artists I follow
+        https://developer.spotify.com/documentation/web-api/reference/#/operations/get-followed"""
 
-        # loop n times to get all artists id (limit: 50 artists per request)
-        next_artist = -1
-        count = 0
-        while next_artist is not None:
-            if count == 0:
-                params["after"] = None
-            else:
-                params["after"] = next_artist
+        end_point = 'https://api.spotify.com/v1/me/following'
 
-            response = requests.get(end_point, headers=self.headers, params=params)
-            response_json = response.json()
+        # loop to get all artists id (limit: 50 artists per request)
+        artists = []
+        after = None
+        while True:
+            params = {'type': 'artist', 'after': after, 'limit': '50'}
+            r = requests.get(end_point, headers=self.headers, params=params)
 
-            for item in response_json["artists"]["items"]:
-                artist_name = item["name"]
-                artist_id = item["id"]
-                self.favorite_artists[artist_name] = artist_id
+            for item in r.json()['artists']['items']:
+                artists.append(item['id'])
 
-            next_artist = response_json["artists"]["cursors"].get("after")
-            count += 1
+            after = r.json()['artists']['cursors'].get('after')
+            if after is None:
+                break
 
-        return self.favorite_artists
+        return artists
 
-    def get_new_releases(self, artists, start_date="", end_date=""):
-        print("Getting new releases ...")
+    def get_artist_name(self, artist_id: str):
+        end_point = f"https://api.spotify.com/v1/artists/{artist_id}"
+        r = requests.get(end_point, headers=self.headers)
+        return r.json()['name']
 
-        # get artist's new releases
-        new_releases, albums_ids, tracks_names = [], [], []
-        for artist_name, artist_id in artists.items():
-            # request
-            end_point = f"https://api.spotify.com/v1/artists/{artist_id}/albums"
-            params = {'country': 'FR', 'limit': '50', "include_groups": "album,single,appears_on"}
-            response = requests.get(end_point, headers=self.headers, params=params)
-            response_json = response.json()
+    def get_new_releases(self, artist_id: str, start_date='', end_date='', return_='id', include='album,single,appears_on'):
+        """ Get artist's new releases (uris)
+        Inlude album_groups: 'album,single,appears_on' or 'album,single' ..."""
+        # if artist_id != '2QVJnfY0oreRfL5HOnbBgy':
+        #     return []
+        # print(self.get_artist_name(artist_id))
 
-            for item in response_json["items"]:
+        end_point = f"https://api.spotify.com/v1/artists/{artist_id}/albums"
+        params = {'country': 'FR', 'limit': '50', "include_groups": include}
+        response = requests.get(end_point, headers=self.headers, params=params)
+        rjson = response.json()
 
-                release_date = item["release_date"]
+        df = pd.DataFrame(rjson['items'])
 
-                if release_date < start_date or release_date > end_date:
-                    continue
+        if df.shape[0] > 0:
+            df['various_artists'] = df['artists'].apply(lambda x: x[0]['name'] == 'Various Artists')
+            df = df.query(f"release_date >= '{start_date}' and release_date <= '{end_date}' and album_type != 'compilation' and various_artists == False")
 
-                # get track info
-                album_group = item["album_group"]
-                album_type = item["album_type"]
-                artists = item["artists"][0]["name"]
-                track_id = item["id"]
-                release_date_formatted = datetime.strptime(release_date, '%Y-%m-%d').strftime('%a %d %b.')
-                track_name_raw = item["name"]
-                track_name = track_name_raw[:50]  # cut long names
+        return df[return_].to_list()
 
-                # get tracks under certain conditions
-                if track_name not in tracks_names \
-                        and album_type != "compilation" \
-                        and artists != "Various Artists":
-                    new_releases.append([artist_name, album_group, album_type, track_name, release_date_formatted])
-                    tracks_names.append(track_name)
-                    if album_group != "album":  # get only singles for later adding to playlist
-                        albums_ids.append(track_id)
+    def get_album(self, album_id: str) -> dict:
+        url = f'https://api.spotify.com/v1/albums/{album_id}'
+        r = requests.get(url, headers=self.headers)
+        return r.json()
 
-        pretty_table = PrettyTable()
-        pretty_table.field_names = ["Artist", "Album group", "Album type", "Name", "Release date"]
-        pretty_table.add_rows(new_releases)
-        print(pretty_table.get_string(sortby="Album group"))
+    # def get_album_name(self, album_id: str) -> dict:
+    #     url = f'https://api.spotify.com/v1/albums/{album_id}'
+    #     r = requests.get(url, headers=self.headers)
+    #     return r.json()['name']
 
-        # print some info
-        print(f"Found {len(new_releases)} new releases "
-              f"({datetime.strptime(start_date, '%Y-%m-%d').strftime('%a %d %b.')} - "
-              f"{datetime.strptime(end_date, '%Y-%m-%d').strftime('%a %d %b.')}).")
+    def get_tracks_from_album(self, album_id: str, return_names: bool = False) -> pd.DataFrame:
+        """Return tracks from a given album id"""
 
-        return albums_ids
+        end_point = f"https://api.spotify.com/v1/albums/{album_id}/tracks"
+        r = requests.get(end_point, headers=self.headers, params={"market": "FR", "limit": "50"})
+        rjson = r.json()
 
-    def get_tracks_from_albums(self, albums_ids):
-        print("Getting tracks from albums ...")
-        tracks_uris = {}
-        for album_id in albums_ids:
-            # request
-            end_point = f"https://api.spotify.com/v1/albums/{album_id}/tracks"
-            response = requests.get(end_point, headers=self.headers, params={"market": "FR", "limit": "50"})
-            response_json = response.json()
+        if return_names:
+            return pd.DataFrame(rjson['items'])['name'].to_list()
 
-            for item in response_json["items"]:
-                # get artists on the song
-                artists = [artist["name"] for artist in item["artists"]]
-
-                # if no favorite artist is on the album, skip
-                if len(set(self.favorite_artists.keys()).intersection(set(artists))) == 0:
-                    continue
-                uri = item["uri"]
-                name = item["name"]
-                tracks_uris[uri] = name
-
-        return tracks_uris
+        return pd.DataFrame(rjson['items'])
 
     def get_devices(self):
-        # request
+
         end_point = "https://api.spotify.com/v1/me/player/devices"
         response = requests.get(end_point, headers=self.headers)
         response_json = response.json()
@@ -127,7 +92,6 @@ class Spotify:
         return devices
 
     def add_to_queue(self, tracks_uris, device_id):
-        # print("Adding to queue ...")
 
         # request
         end_point = "https://api.spotify.com/v1/me/player/queue"
@@ -136,9 +100,6 @@ class Spotify:
             requests.post(end_point, headers=self.headers, params=params)
 
     def create_playlist(self, playlist_name):
-        print("Creating playlist ...")
-
-        # request
         end_point = f"https://api.spotify.com/v1/users/{self.user_id}/playlists"
         data = {'name': playlist_name,
                 "public": "false"}
@@ -147,34 +108,50 @@ class Spotify:
 
         return response_json["id"]
 
-    def get_songs_from_release_radar(self):
-        # print("Getting songs from official release radar ...")
-
+    def get_songs_from_playlist(self, paylist_id: str, return_: str = 'name') -> list[str]:
+        """Return tracks 'uri' or 'name' from a given playlist"""
         # request
-        end_point = f"https://api.spotify.com/v1/playlists/{self.release_radar_id}/tracks"
-        # params = {"fields": "items(track(name)"}
-        response = requests.get(end_point, headers=self.headers)
-        response_json = response.json()
+        end_point = f"https://api.spotify.com/v1/playlists/{paylist_id}/tracks"
+        r = requests.get(end_point, headers=self.headers)
+        rjson = r.json()
 
         # parse track names
-        release_radar_tracks_names = [item["track"]["album"].get("name")
-                                      for item in response_json["items"]
-                                      if item["track"] is not None]
-        return release_radar_tracks_names
+        release_radar_tracks = [item["track"]["album"].get(return_) for item in rjson["items"]
+                                if item["track"] is not None]
+        return release_radar_tracks
 
-    def add_to_playlist(self, tracks_uris, playlist_id):
-        print("Adding songs to playlist ...")
-
-        # get new release already present in official release radar
-        release_radar_tracks_names = self.get_songs_from_release_radar()
-
-        # keep only uris not in release radar
-        tracks_uris_new = {uri for uri in tracks_uris.keys() if tracks_uris[uri] not in release_radar_tracks_names}
-
+    def update_playlist_items(self, playlist_id: str, tracks_uris: list[str]) -> None:
+        """Either reorder or replace items in a playlist depending on the request's parameters.
+        https://developer.spotify.com/documentation/web-api/reference/#/operations/reorder-or-replace-playlists-tracks"""
         # make a long string of tracks uris
-        tracks_uris_list = ','.join(tracks_uris_new)
+        tracks_uris_list = ','.join(tracks_uris)
 
         # request
         end_point = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
         params = {"uris": tracks_uris_list}
-        requests.post(end_point, headers=self.headers, params=params)
+        requests.put(end_point, headers=self.headers, params=params)
+
+    def get_user_playlists(self, contains: str = None):
+        params = {'limit': 30, 'offset': 0}
+        url = 'https://api.spotify.com/v1/me/playlists'
+        ls = []
+        while True:
+            r = requests.get(url, headers=self.headers, params=params)
+            if not r.json()['items']:
+                break
+
+            ls.extend(r.json()['items'])
+            params['offset'] += params['limit']
+
+        df = pd.DataFrame(ls)
+        if contains is not None:
+            df = df.query(f"name.str.contains('{contains}')")
+
+        return df
+
+    def update_playlist_details(self, playlist_id: int, name: str = 'New Playlist', public: bool = False, collaborative: bool = False, description: str = 'Issa description.') -> None:
+        """Change a playlist's name and public/private state (the user must, of course, own the playlist).
+        https://developer.spotify.com/documentation/web-api/reference/#/operations/change-playlist-details"""
+        data = {'name': name, 'public': public, 'collaborative': collaborative, 'description': description}
+        url = f'https://api.spotify.com/v1/playlists/{playlist_id}'
+        r = requests.put(url, data=json.dumps(data), headers=self.headers)

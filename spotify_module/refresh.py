@@ -1,11 +1,11 @@
-import os
 import requests
 
 
 class Refresh:
-    def __init__(self):
-        self.refresh_token = os.environ.get("SPOTIFY_REFRESH_TOKEN")
-        self.base_64 = os.environ.get("SPOTIFY_BASE64")
+    """Refresh Spotify Token"""
+    def __init__(self, refresh_token, base_64):
+        self.refresh_token = refresh_token
+        self.base_64 = base_64
 
     def refresh(self):
         url = "https://accounts.spotify.com/api/token"
