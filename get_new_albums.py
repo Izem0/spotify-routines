@@ -1,6 +1,5 @@
-"""
-Description : Send email when for releases of new albums (check every friday).
-"""
+""" Description : Send email when for releases of new albums (check every friday). """
+
 import logging
 import os
 import sys
@@ -13,6 +12,7 @@ from email.message import EmailMessage
 
 
 # TODO: embbed artworks image to email
+
 
 def send_email(sender="izem.mangione@gmail.com", receipient="izem.mangione@gmail.com",
                subject='', body='', html=None):
@@ -37,28 +37,27 @@ def send_email(sender="izem.mangione@gmail.com", receipient="izem.mangione@gmail
         smtp.login(email_address, email_password)
         smtp.send_message(msg)
 
-    logging.info(f"Mail sent to {receipient}.")
 
+def main():
+    # instantiate log
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S',
+                        level=logging.INFO,
+                        handlers=[logging.StreamHandler(sys.stdout)])
 
-# instantiate log
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S',
-                    level=logging.INFO,
-                    handlers=[logging.StreamHandler(sys.stdout)])
+    # load env variables
+    load_dotenv()
 
-# load env variables
-load_dotenv()
+    # set important variables
+    # add = True  # add to my spotify's playlists
+    today_dt = datetime.today().date()
+    today_str = today_dt.strftime("%Y-%m-%d")
+    seven_days_ago_str = (today_dt - timedelta(days=6)).strftime("%Y-%m-%d")
 
-# set important variables
-# add = True  # add to my spotify's playlists
-today_dt = datetime.today().date()
-today_str = today_dt.strftime("%Y-%m-%d")
-seven_days_ago_str = (today_dt - timedelta(days=6)).strftime("%Y-%m-%d")
-
-
-def run():
     # instantiate Spotify class
-    spotify = Spotify()
+    refresh_token = os.environ.get("SPOTIFY_REFRESH_TOKEN")
+    base64 = os.environ.get("SPOTIFY_BASE64")
+    spotify = Spotify(user_id=1181713624, refresh_token=refresh_token, base64=base64)
     df = pd.DataFrame()
 
     # get artists I follow
@@ -72,17 +71,20 @@ def run():
     df['album_id'] = df['artist_id'].apply(spotify.get_new_releases, start_date=seven_days_ago_str, end_date=today_str, return_='id', include='album')
     df = df.explode('album_id').dropna(subset='album_id')
     df['album_name'] = df['album_id'].apply(lambda x: spotify.get_album(x)['name'])
+    df.drop_duplicates(subset=['artist_name', 'album_name'], inplace=True)
 
     # get tracks from albums
-    df['track'] = df['album_id'].apply(spotify.get_tracks_from_album, return_names=True)
-    df = df.explode('track')
+    # df['track'] = df['album_id'].apply(spotify.get_tracks_from_album, return_names=True)
+    # df = df.explode('track')
 
-    df.set_index(['artist_name', 'album_name'], inplace=True)
+    # df.set_index(['artist_name', 'album_name'], inplace=True)
 
+    # # send email
     n_albums = len(df['album_id'].unique())
-    send_email(subject=f'{n_albums} albums found from your favorite artists!',
-               html=df.to_html(columns=['track'], bold_rows=True))
+    send_email(subject=f'{n_albums} new albums found from your favorite artists!',
+               html=df.to_html(columns=['artist_name', 'album_name'], bold_rows=True))
+    # logging.info('Mail sent!')
 
 
 if __name__ == '__main__':
-    run()
+    main()
