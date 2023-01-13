@@ -10,9 +10,10 @@ from spotify_module.spotify_class import Spotify
 from dotenv import load_dotenv
 
 # TODO:
-#  get_tracks_from_albums() -> regroup requests
-#  don't include albums (see get_new_releases())
-#  create playlist if none exist
+#   - 'difference of release new songs & radar songs' -> do it with title name, not ids
+#   - get_tracks_from_albums() -> regroup requests
+#   - don't include albums (see get_new_releases())
+#   - create playlist if none exist
 
 def main():
     # timer
@@ -56,6 +57,7 @@ def main():
     logging.info('Getting new albums from those artists ...')
     albums_ids = []
     for artist_id in artists:
+    # for artist_id in ['3TVXtAsR1Inumwj472S9r4']:  # debug
         new_release = spotify.get_new_releases(artist_id, start_date=seven_days_ago_str, end_date=today_str, return_='id', include='album,single,appears_on')
         albums_ids.extend(new_release)
 

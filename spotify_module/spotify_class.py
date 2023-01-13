@@ -128,8 +128,8 @@ class Spotify:
 
         # request
         end_point = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
-        params = {"uris": tracks_uris_list}
-        requests.put(end_point, headers=self.headers, params=params)
+        json_data = {"uris": tracks_uris_list}
+        requests.put(end_point, headers=self.headers, json=json_data)
 
     def get_user_playlists(self, contains: str = None):
         params = {'limit': 30, 'offset': 0}
@@ -155,3 +155,18 @@ class Spotify:
         data = {'name': name, 'public': public, 'collaborative': collaborative, 'description': description}
         url = f'https://api.spotify.com/v1/playlists/{playlist_id}'
         r = requests.put(url, data=json.dumps(data), headers=self.headers)
+
+    def save_albums(self, ids: list[str]) -> None:
+        """Save one or more albums to the current user's 'Your Music' library.
+
+        ids: str
+        A comma-separated list of the Spotify IDs for the albums. Maximum: 20 IDs.
+        Example value:
+        "382ObEPsp2rxGrnsizN5TX,1A2GTWGtFfWp7KSQTwWOyo,2noRn2Aes5aoNVsU6iWThc"
+
+        https://developer.spotify.com/documentation/web-api/reference/#/operations/save-albums-user
+        """
+        album_ids_list = ','.join(ids)
+        end_point = f"https://api.spotify.com/v1/me/albums"
+        json_data = {'ids': [album_ids_list]}
+        requests.put(end_point, headers=self.headers, json=json_data)
