@@ -5,7 +5,6 @@ import sys
 import time
 import os
 import pandas as pd
-from datetime import datetime, timedelta
 from spotify.client import Spotify
 from dotenv import load_dotenv
 
@@ -30,9 +29,8 @@ def main():
 
     # set important variables
     release_radar_id = "37i9dQZEVXbkf1UTJ14JFi"
-    today_dt = datetime.today().date()
-    today_str = today_dt.strftime("%Y-%m-%d")
-    seven_days_ago_str = (today_dt - timedelta(days=6)).strftime("%Y-%m-%d")
+    end_date = pd.Timestamp.utcnow().date()
+    start_date = end_date - pd.Timedelta(days=6)
 
     # instantiate Spotify class
     refresh_token = os.environ.get("SPOTIFY_REFRESH_TOKEN")
@@ -58,7 +56,7 @@ def main():
     albums_ids = []
     for artist_id in artists:
     # for artist_id in ['3TVXtAsR1Inumwj472S9r4']:  # debug
-        new_release = spotify.get_artist_releases(artist_id, start_date=seven_days_ago_str, end_date=today_str, return_='id', include='album,single,appears_on')
+        new_release = spotify.get_artist_releases(artist_id, start_date=start_date, end_date=end_date)
         albums_ids.extend(new_release)
 
     # get songs from release radar to not add them
@@ -81,8 +79,7 @@ def main():
 
     # update playlist description
     logging.info('Updating playlist ...')
-    end_date = datetime.strptime(today_str, "%Y-%m-%d").strftime('%b %d')
-    playlist_name = f'Release Radar ({end_date})'
+    playlist_name = f"Release Radar ({end_date.strftime('%b %d')})"
     spotify.update_playlist_details(playlist_id, name=playlist_name)
 
     # update playlist with new songs
@@ -91,7 +88,7 @@ def main():
 
     # finish
     t2 = time.perf_counter()
-    logging.info(f"Done. Elapsed time: {str(timedelta(seconds=t2-t1))}")
+    logging.info(f"Done. Elapsed time: {str(pd.Timedelta(seconds=t2-t1))[:-10]}")
 
 
 if __name__ == '__main__':
