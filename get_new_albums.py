@@ -5,7 +5,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 import pandas as pd
-from spotify_module.spotify_class import Spotify
+from spotify.client import Spotify
 from dotenv import load_dotenv
 from utils import send_email
 
@@ -41,7 +41,7 @@ def main():
     df['artist_name'] = df['artist_id'].apply(spotify.get_artist_name)
     logging.info(f"Found {df.shape[0]} fav. artists.")
 
-    # albums from those artists
+    # get albums from those artists
     logging.info('Getting new albums from those artists ...')
     df['album_id'] = df['artist_id'].apply(
         spotify.get_new_releases,
@@ -50,12 +50,13 @@ def main():
     df = df.explode('album_id').dropna(subset='album_id')
     df['album_name'] = df['album_id'].apply(lambda x: spotify.get_album(x)['name'])
     df.drop_duplicates(subset=['artist_name', 'album_name'], inplace=True)
+    n_albums = len(df['album_id'].unique())
+    logging.info(f'Found {n_albums} albums')
 
     # like those albums
     spotify.save_albums(ids=df['album_id'].to_list())
 
     # send email
-    n_albums = len(df['album_id'].unique())
     send_email(subject=f'{n_albums} new albums found from your favorite artists!',
                html=df.to_html(columns=['artist_name', 'album_name'], bold_rows=True))
 

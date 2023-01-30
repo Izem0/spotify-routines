@@ -6,7 +6,7 @@ import time
 import os
 import pandas as pd
 from datetime import datetime, timedelta
-from spotify_module.spotify_class import Spotify
+from spotify.client import Spotify
 from dotenv import load_dotenv
 
 # TODO:
@@ -58,7 +58,7 @@ def main():
     albums_ids = []
     for artist_id in artists:
     # for artist_id in ['3TVXtAsR1Inumwj472S9r4']:  # debug
-        new_release = spotify.get_new_releases(artist_id, start_date=seven_days_ago_str, end_date=today_str, return_='id', include='album,single,appears_on')
+        new_release = spotify.get_artist_releases(artist_id, start_date=seven_days_ago_str, end_date=today_str, return_='id', include='album,single,appears_on')
         albums_ids.extend(new_release)
 
     # get songs from release radar to not add them
