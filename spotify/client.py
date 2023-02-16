@@ -56,9 +56,8 @@ class Spotify:
     def get_artist_releases(
             self,
             artist_id: str,
-            start_date=pd.Timestamp.utcnow() - pd.Timedelta(days=7),
-            end_date=pd.Timestamp.utcnow(),
-            return_='id',
+            start_date=(pd.Timestamp.utcnow() - pd.Timedelta(days=7)).date(),
+            end_date=pd.Timestamp.utcnow().date(),
             include='album,single,appears_on',
             limit=50,
             market='FR',
@@ -73,9 +72,9 @@ class Spotify:
 
         if df.shape[0] > 0:
             df['various_artists'] = df['artists'].apply(lambda x: x[0]['name'] == 'Various Artists')  # flag 'various artists' albums
-            df = df.query(f"release_date >= '{start_date.date().isoformat()}' and release_date <= '{end_date.date().isoformat()}' and album_type != 'compilation' and various_artists == False")
+            df = df.query(f"release_date >= '{start_date.isoformat()}' and release_date <= '{end_date.isoformat()}' and album_type != 'compilation' and various_artists == False")
 
-        return df[return_].to_list()
+        return df
 
     def get_album(self, album_id: str, market: str = 'FR') -> dict:
         """Get Spotify catalog information for a single album.
@@ -116,14 +115,14 @@ class Spotify:
         r = self._put(f"playlists/{playlist_id}", json=data)
         return r
 
-    def get_songs_from_playlist(self, paylist_id: str, return_: str = 'name') -> list[str]:
+    def get_songs_from_playlist(self, paylist_id: str) -> pd.DataFrame:
         """Return tracks 'uri' or 'name' from a given playlist
         https://developer.spotify.com/documentation/web-api/reference/#/operations/get-playlists-tracks"""
         r = self._get(f"playlists/{paylist_id}/tracks")
         # parse track names
-        songs = [item["track"]["album"].get(return_) for item in r.json()["items"]
-                                if item["track"] is not None]
-        return songs
+        # songs = [item["track"]["album"].get(return_) for item in r.json()["items"]
+        #                         if item["track"] is not None]
+        return pd.DataFrame([x['track'] for x in r.json()['items']])
 
     def update_playlist_items(self, playlist_id: str, tracks_uris: list[str]) -> None:
         """Either reorder or replace items in a playlist depending on the request's parameters.

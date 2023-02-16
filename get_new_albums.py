@@ -3,7 +3,6 @@
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
 import pandas as pd
 from spotify.client import Spotify
 from dotenv import load_dotenv
@@ -24,10 +23,8 @@ def main():
     load_dotenv()
 
     # set important variables
-    # add = True  # add to my spotify's playlists
-    today_dt = datetime.today().date()
-    today_str = today_dt.strftime("%Y-%m-%d")
-    seven_days_ago_str = (today_dt - timedelta(days=6)).strftime("%Y-%m-%d")
+    end_date = pd.Timestamp.utcnow().date()
+    start_date = end_date - pd.Timedelta(days=6)
 
     # instantiate Spotify class
     refresh_token = os.environ.get("SPOTIFY_REFRESH_TOKEN")
@@ -43,11 +40,15 @@ def main():
 
     # get albums from those artists
     logging.info('Getting new albums from those artists ...')
-    df['album_id'] = df['artist_id'].apply(
-        spotify.get_new_releases,
-        start_date=seven_days_ago_str, end_date=today_str, return_='id', include='album'
-        )
+    df['album_id'] = [
+        spotify.get_artist_releases(artist_id, start_date=start_date, end_date=end_date, include='album')['id'].to_list() for artist_id in df['artist_id']
+        ]
     df = df.explode('album_id').dropna(subset='album_id')
+
+    if df.shape[0] == 0:
+        send_email(subject=f'No new albums from your favorite artists')
+        return
+
     df['album_name'] = df['album_id'].apply(lambda x: spotify.get_album(x)['name'])
     df.drop_duplicates(subset=['artist_name', 'album_name'], inplace=True)
     n_albums = len(df['album_id'].unique())
@@ -55,10 +56,12 @@ def main():
 
     # like those albums
     spotify.save_albums(ids=df['album_id'].to_list())
+    logging.info(f'{n_albums} albums liked')
 
     # send email
     send_email(subject=f'{n_albums} new albums found from your favorite artists!',
                html=df.to_html(columns=['artist_name', 'album_name'], bold_rows=True))
+    logging.info(f'Mail sent')
 
 
 if __name__ == '__main__':

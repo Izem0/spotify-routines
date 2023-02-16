@@ -29,7 +29,7 @@ def main():
 
     # set important variables
     release_radar_id = "37i9dQZEVXbkf1UTJ14JFi"
-    end_date = pd.Timestamp.utcnow().date()
+    end_date = pd.Timestamp.utcnow().date()  # pd.Timestamp(2023, 2, 10)
     start_date = end_date - pd.Timedelta(days=6)
 
     # instantiate Spotify class
@@ -53,22 +53,26 @@ def main():
 
     # get new releases from those artists
     logging.info('Getting new albums from those artists ...')
-    albums_ids = []
+    new_albums = pd.DataFrame()
     for artist_id in artists:
     # for artist_id in ['3TVXtAsR1Inumwj472S9r4']:  # debug
-        new_release = spotify.get_artist_releases(artist_id, start_date=start_date, end_date=end_date)
-        albums_ids.extend(new_release)
+        new_albums = pd.concat(
+            [new_albums, spotify.get_artist_releases(artist_id, start_date=start_date, end_date=end_date)[["id", 'name']]],
+            ignore_index=True
+        )
 
     # get songs from release radar to not add them
     logging.info('Getting songs from release radar ...')
-    radar_albums_ids = spotify.get_songs_from_playlist(release_radar_id, return_='id')
+    radar_albums = spotify.get_songs_from_playlist(release_radar_id)[["id", 'name']]
 
-    # difference of release new songs & radar songs
-    diff = list(set(albums_ids) - set(radar_albums_ids))
+    # songs that are in new_releases but not in radar_albums
+    # TODO: difference with title name, not ids
+    merge = new_albums.merge(radar_albums, on='name', how='left', indicator=True)
+    merge = merge.query("_merge == 'left_only'").drop_duplicates(subset=['name'], keep='first')
 
     # get tracks uris from albums
     tracks = pd.DataFrame()
-    for album in diff:
+    for album in merge['id_x'].to_list():
         tracks = pd.concat([tracks, spotify.get_tracks_from_album(album)])
     tracks.drop_duplicates('name', keep='first', inplace=True)  # remove non explicit
     tracks = tracks.explode('artists')
