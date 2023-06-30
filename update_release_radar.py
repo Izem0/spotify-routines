@@ -9,7 +9,6 @@ from spotify.client import Spotify
 from dotenv import load_dotenv
 
 # TODO:
-#   - 'difference of release new songs & radar songs' -> do it with title name, not ids
 #   - get_tracks_from_albums() -> regroup requests
 #   - don't include albums (see get_new_releases())
 #   - create playlist if none exist
@@ -66,7 +65,6 @@ def main():
     radar_albums = spotify.get_songs_from_playlist(release_radar_id)[["id", 'name']]
 
     # songs that are in new_releases but not in radar_albums
-    # TODO: difference with title name, not ids
     merge = new_albums.merge(radar_albums, on='name', how='left', indicator=True)
     merge = merge.query("_merge == 'left_only'").drop_duplicates(subset=['name'], keep='first')
 

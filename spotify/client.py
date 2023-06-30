@@ -116,14 +116,15 @@ class Spotify:
         return r
 
     def get_songs_from_playlist(self, paylist_id: str) -> pd.DataFrame:
-        """Return tracks 'uri' or 'name' from a given playlist
+        """Get full details of the items of a playlist owned by a Spotify user.
         https://developer.spotify.com/documentation/web-api/reference/#/operations/get-playlists-tracks"""
         r = self._get(f"playlists/{paylist_id}/tracks")
         # parse track names
         # songs = [item["track"]["album"].get(return_) for item in r.json()["items"]
         #                         if item["track"] is not None]
-        return pd.DataFrame([x['track'] for x in r.json()['items']])
-
+        # return pd.DataFrame([x['track'] for x in r.json()['items']])
+        return pd.json_normalize([x['track'] for x in r.json()['items']])
+    
     def update_playlist_items(self, playlist_id: str, tracks_uris: list[str]) -> None:
         """Either reorder or replace items in a playlist depending on the request's parameters.
         https://developer.spotify.com/documentation/web-api/reference/#/operations/reorder-or-replace-playlists-tracks"""
