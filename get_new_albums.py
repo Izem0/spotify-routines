@@ -6,10 +6,13 @@ from pathlib import Path
 import pandas as pd
 from spotify.client import Spotify
 from dotenv import load_dotenv
+from infisical import InfisicalClient
 from utils import send_email, setup_logger
 
-# load env variables
+# load env. variables
 load_dotenv()
+infisical = InfisicalClient(token=os.getenv("INFISICAL_TOKEN"))
+infisical.get_all_secrets(attach_to_os_environ=True)
 
 
 BASE_DIR = Path(__file__).resolve().parent
