@@ -1,7 +1,6 @@
-""" Description : Send email when for releases of new albums (check every friday). """
+"""Send myself an email when my favorites artists released a new song/album (check every friday)."""
 
 import os
-import sys
 from pathlib import Path
 
 import pandas as pd
@@ -9,8 +8,9 @@ from spotify.client import Spotify
 from dotenv import load_dotenv
 from utils import send_email, setup_logger
 
+# load env variables
+load_dotenv()
 
-# TODO: embbed artworks image to email
 
 BASE_DIR = Path(__file__).resolve().parent
 LOGS_DIR = BASE_DIR / "logs/"
@@ -20,34 +20,30 @@ LOGGER = setup_logger(
     log_config_file=BASE_DIR / "logging.yaml",
     log_file=LOGS_DIR / "spotify.log",
 )
+END_DATE = pd.Timestamp.utcnow().date()
+START_DATE = END_DATE - pd.Timedelta(days=6)
+REFRESH_TOKEN = os.environ.get("SPOTIFY_REFRESH_TOKEN")
+CLIENT_BASE_64 = os.environ.get("SPOTIFY_BASE64")
+USER_ID = os.environ.get("USER_ID")
 
 
 def main():
-    # load env variables
-    load_dotenv()
-
-    # set important variables
-    end_date = pd.Timestamp.utcnow().date()
-    start_date = end_date - pd.Timedelta(days=6)
-
-    # instantiate Spotify class
-    refresh_token = os.environ.get("SPOTIFY_REFRESH_TOKEN")
-    base64 = os.environ.get("SPOTIFY_BASE64")
-    spotify = Spotify(user_id=1181713624, refresh_token=refresh_token, base64=base64)
+    # instantiate class
+    spotify = Spotify(user_id=USER_ID, refresh_token=REFRESH_TOKEN, base64=CLIENT_BASE_64)
 
     # get artists I follow
-    LOGGER.info("Getting favorite artists ...")
+    LOGGER.info("Getting favorite artists...")
     df = pd.DataFrame()
     df["artist_id"] = spotify.get_favorite_artists()
     df["artist_name"] = df["artist_id"].apply(spotify.get_artist_name)
     LOGGER.info(f"Found {df.shape[0]} fav. artists.")
 
     # get albums from those artists
-    LOGGER.info("Getting new albums from those artists ...")
+    LOGGER.info("Getting new albums from those artists...")
     album_ids = []
     for artist_id in df["artist_id"]:
         artist_albums = spotify.get_artist_releases(
-            artist_id, start_date=start_date, end_date=end_date, include="album"
+            artist_id, start_date=START_DATE, end_date=END_DATE, include="album"
         )
         if "id" not in artist_albums.columns:
             album_ids.append([])
@@ -56,7 +52,7 @@ def main():
     df["album_id"] = album_ids
     df = df.explode("album_id").dropna(subset="album_id")
 
-    if df.shape[0] == 0:
+    if df.empty:
         send_email(subject=f"No new albums from your favorite artists")
         return
 
@@ -74,7 +70,7 @@ def main():
         subject=f"{n_albums} new albums found from your favorite artists!",
         html=df.to_html(columns=["artist_name", "album_name"], bold_rows=True),
     )
-    LOGGER.info(f"Mail sent")
+    LOGGER.info(f"Mail sent.")
 
 
 if __name__ == "__main__":
