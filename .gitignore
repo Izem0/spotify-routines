@@ -7,4 +7,5 @@ logs/
 records
 table
 test_script.py
+TODO.md
 venv/
