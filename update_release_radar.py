@@ -1,40 +1,39 @@
 """Get new songs from my favorite artists and add them to a playlist"""
 
-import logging
-import sys
-import time
 import os
+from pathlib import Path
+
 import pandas as pd
 from spotify.client import Spotify
 from dotenv import load_dotenv
+from infisical import InfisicalClient
+from utils import setup_logger
 
-# TODO:
-#   - get_tracks_from_albums() -> regroup requests
-#   - don't include albums (see get_new_releases())
-#   - create playlist if none exist
+# load env. variables
+load_dotenv()
+infisical = InfisicalClient(token=os.getenv("INFISICAL_TOKEN"))
+infisical.get_all_secrets(attach_to_os_environ=True)
+
+
+BASE_DIR = Path(__file__).resolve().parent
+LOGS_DIR = BASE_DIR / "logs/"
+LOGS_DIR.mkdir(exist_ok=True)
+LOGGER = setup_logger(
+    "spotify",
+    log_config_file=BASE_DIR / "logging.yaml",
+    log_file=LOGS_DIR / "spotify.log",
+)
+END_DATE = pd.Timestamp.utcnow().date()
+START_DATE = END_DATE - pd.Timedelta(days=6)
+REFRESH_TOKEN = os.environ.get("SPOTIFY_REFRESH_TOKEN")
+CLIENT_BASE_64 = os.environ.get("SPOTIFY_BASE64")
+USER_ID = os.environ.get("USER_ID")
+RELEASE_RADAR_ID = os.environ.get("RELEASE_RADAR_ID")
+
 
 def main():
-    # timer
-    t1 = time.perf_counter()
-
-    # instantiate log
-    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S',
-                        level=logging.INFO,
-                        handlers=[logging.StreamHandler(sys.stdout)])
-
-    # load env variables
-    load_dotenv()
-
-    # set important variables
-    release_radar_id = "37i9dQZEVXbkf1UTJ14JFi"
-    end_date = pd.Timestamp.utcnow().date()  # pd.Timestamp(2023, 2, 10)
-    start_date = end_date - pd.Timedelta(days=6)
-
-    # instantiate Spotify class
-    refresh_token = os.environ.get("SPOTIFY_REFRESH_TOKEN")
-    base64 = os.environ.get("SPOTIFY_BASE64")
-    spotify = Spotify(user_id=1181713624, refresh_token=refresh_token, base64=base64)
+    # instantiate class
+    spotify = Spotify(user_id=USER_ID, refresh_token=REFRESH_TOKEN, base64=CLIENT_BASE_64)
 
     # first get previous playlist id
     my_playlists = spotify.get_user_playlists()
@@ -46,23 +45,23 @@ def main():
     playlist_id = my_playlists.query("cus_release_radar == True")['id'].iloc[0]
 
     # get artists I follow
-    logging.info('Getting favorite artists ...')
+    LOGGER.info('Getting favorite artists ...')
     artists = spotify.get_favorite_artists()
-    logging.info(f"Found {len(artists)} fav. artists.")
+    LOGGER.info(f"Found {len(artists)} fav. artists.")
 
     # get new releases from those artists
-    logging.info('Getting new albums from those artists ...')
+    LOGGER.info('Getting new albums from those artists ...')
     new_albums = pd.DataFrame()
     for artist_id in artists:
     # for artist_id in ['3TVXtAsR1Inumwj472S9r4']:  # debug
         new_albums = pd.concat(
-            [new_albums, spotify.get_artist_releases(artist_id, start_date=start_date, end_date=end_date)[["id", 'name']]],
+            [new_albums, spotify.get_artist_releases(artist_id, start_date=START_DATE, end_date=END_DATE)[["id", 'name']]],
             ignore_index=True
         )
 
     # get songs from release radar to not add them
-    logging.info('Getting songs from release radar ...')
-    radar_albums = spotify.get_songs_from_playlist(release_radar_id)[["id", 'name']]
+    LOGGER.info('Getting songs from release radar ...')
+    radar_albums = spotify.get_songs_from_playlist(RELEASE_RADAR_ID)[["id", 'name']]
 
     # songs that are in new_releases but not in radar_albums
     merge = new_albums.merge(radar_albums, on='name', how='left', indicator=True)
@@ -80,17 +79,13 @@ def main():
     tracks_uris = tracks['uri'].to_list()
 
     # update playlist description
-    logging.info('Updating playlist ...')
-    playlist_name = f"Release Radar ({end_date.strftime('%b %d')})"
+    LOGGER.info('Updating playlist ...')
+    playlist_name = f"Release Radar ({END_DATE.strftime('%b %d')})"
     spotify.update_playlist_details(playlist_id, name=playlist_name)
 
     # update playlist with new songs
-    logging.info(f'Add songs to to playlist {playlist_name} ...')
+    LOGGER.info(f'Add songs to to playlist {playlist_name} ...')
     spotify.update_playlist_items(playlist_id, tracks_uris)
-
-    # finish
-    t2 = time.perf_counter()
-    logging.info(f"Done. Elapsed time: {str(pd.Timedelta(seconds=t2-t1))[:-10]}")
 
 
 if __name__ == '__main__':
