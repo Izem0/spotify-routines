@@ -1,7 +1,6 @@
-*.pyc
+__pycache__
 .env
 .idea/
-__pycache__/
 curl.txt
 logs/
 records
