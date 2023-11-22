@@ -7,7 +7,7 @@ import pandas as pd
 from spotify.client import Spotify
 from dotenv import load_dotenv
 from infisical import InfisicalClient
-from utils import send_email, setup_logger
+from utils import send_email, setup_logger, timer
 
 # load env. variables
 load_dotenv()
@@ -30,6 +30,7 @@ CLIENT_BASE_64 = os.environ.get("SPOTIFY_BASE64")
 USER_ID = os.environ.get("USER_ID")
 
 
+@timer(LOGGER)
 def main():
     # instantiate class
     spotify = Spotify(user_id=USER_ID, refresh_token=REFRESH_TOKEN, base64=CLIENT_BASE_64)
