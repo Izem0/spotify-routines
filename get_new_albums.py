@@ -1,4 +1,4 @@
-"""Send myself an email when my favorites artists released a new song/album (check every friday)."""
+"""Send myself an email if my favorites artists released a new song/album in the past week (to run every friday)."""
 
 import os
 from pathlib import Path
