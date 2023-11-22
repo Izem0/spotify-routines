@@ -1,26 +1,28 @@
 """ Description : Send email when for releases of new albums (check every friday). """
 
-import logging
 import os
 import sys
+from pathlib import Path
+
 import pandas as pd
 from spotify.client import Spotify
 from dotenv import load_dotenv
-from utils import send_email
+from utils import send_email, setup_logger
 
 
 # TODO: embbed artworks image to email
 
+BASE_DIR = Path(__file__).resolve().parent
+LOGS_DIR = BASE_DIR / "logs/"
+LOGS_DIR.mkdir(exist_ok=True)
+LOGGER = setup_logger(
+    "spotify",
+    log_config_file=BASE_DIR / "logging.yaml",
+    log_file=LOGS_DIR / "spotify.log",
+)
+
 
 def main():
-    # instantiate log
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.INFO,
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
-
     # load env variables
     load_dotenv()
 
@@ -34,14 +36,14 @@ def main():
     spotify = Spotify(user_id=1181713624, refresh_token=refresh_token, base64=base64)
 
     # get artists I follow
-    logging.info("Getting favorite artists ...")
+    LOGGER.info("Getting favorite artists ...")
     df = pd.DataFrame()
     df["artist_id"] = spotify.get_favorite_artists()
     df["artist_name"] = df["artist_id"].apply(spotify.get_artist_name)
-    logging.info(f"Found {df.shape[0]} fav. artists.")
+    LOGGER.info(f"Found {df.shape[0]} fav. artists.")
 
     # get albums from those artists
-    logging.info("Getting new albums from those artists ...")
+    LOGGER.info("Getting new albums from those artists ...")
     album_ids = []
     for artist_id in df["artist_id"]:
         artist_albums = spotify.get_artist_releases(
@@ -61,18 +63,18 @@ def main():
     df["album_name"] = df["album_id"].apply(lambda x: spotify.get_album(x)["name"])
     df.drop_duplicates(subset=["artist_name", "album_name"], inplace=True)
     n_albums = len(df["album_id"].unique())
-    logging.info(f"Found {n_albums} albums")
+    LOGGER.info(f"Found {n_albums} albums")
 
     # like those albums
     spotify.save_albums(ids=df["album_id"].to_list())
-    logging.info(f"{n_albums} albums liked")
+    LOGGER.info(f"{n_albums} albums liked")
 
     # send email
     send_email(
         subject=f"{n_albums} new albums found from your favorite artists!",
         html=df.to_html(columns=["artist_name", "album_name"], bold_rows=True),
     )
-    logging.info(f"Mail sent")
+    LOGGER.info(f"Mail sent")
 
 
 if __name__ == "__main__":

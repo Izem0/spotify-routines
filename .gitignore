@@ -1,9 +1,10 @@
 *.pyc
-/venv/
-/.idea/
-/__pycache__/
+.env
+.idea/
+__pycache__/
 curl.txt
-/test_script.py
-/.env
+logs/
 records
 table
+test_script.py
+venv/
