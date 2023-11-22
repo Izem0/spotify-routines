@@ -18,7 +18,6 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${EC2_HOST} >> ~/.ssh/known_hosts
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
 
       - name: Write SSH key to file
@@ -34,7 +33,6 @@ jobs:
           scp -i ~/.ssh/private_key .env ${USER}@${EC2_HOST}:${WORKDIR}
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
-          STRATEGIES: ${{ secrets.STRATEGIES }}
           WORKDIR: ${{ secrets.WORKDIR }}
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
           USER: ${{ secrets.USER }}
@@ -46,6 +44,5 @@ jobs:
           git reset --hard HEAD
           git pull origin main
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.USER }}
