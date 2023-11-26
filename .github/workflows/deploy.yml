@@ -40,7 +40,7 @@ jobs:
       - name: Deploy code to EC2
         run: |
           ssh -i ~/.ssh/private_key ${USER}@${EC2_HOST} <<'EOF'
-          cd ~/python-scripts/spotify-new-releases/
+          cd ~/python-scripts/spotify-routines/
           git reset --hard HEAD
           git pull origin main
         env:
