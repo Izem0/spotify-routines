@@ -82,7 +82,7 @@ def main():
     # update playlist description
     LOGGER.info('Updating playlist ...')
     playlist_name = f"Release Radar ({END_DATE.strftime('%b %d')})"
-    spotify.update_playlist_details(playlist_id, name=playlist_name)
+    spotify.change_playlist_details(playlist_id, name=playlist_name)
 
     # update playlist with new songs
     LOGGER.info(f'Add songs to to playlist {playlist_name} ...')
