@@ -5,6 +5,6 @@ curl.txt
 logs/
 records
 table
-test_script.py
+testing_script.py
 TODO.md
 venv/
