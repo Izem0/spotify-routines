@@ -72,7 +72,7 @@ def main():
     # send email
     send_email(
         subject=f"{n_albums} new albums found from your favorite artists!",
-        html=df.to_html(columns=["artist_name", "album_name"], bold_rows=True),
+        html=df.to_html(columns=["artist_name", "album_name"], bold_rows=True, index=False),
     )
     LOGGER.info(f"Mail sent.")
 
