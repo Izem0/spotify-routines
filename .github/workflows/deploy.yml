@@ -29,7 +29,9 @@ jobs:
 
       - name: Upload .env to EC2
         run: |
-          echo "INFISICAL_TOKEN=${INFISICAL_TOKEN}" > .env
+          echo "INFISICAL_MACHINE_CLIENT_ID=${INFISICAL_MACHINE_CLIENT_ID}" > .env
+          echo "INFISICAL_MACHINE_CLIENT_SECRET=${INFISICAL_MACHINE_CLIENT_SECRET}" >> .env
+          echo "PROJECT_ID=${PROJECT_ID}" >> .env
           scp -i ~/.ssh/private_key .env ${USER}@${EC2_HOST}:${WORKDIR}
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
