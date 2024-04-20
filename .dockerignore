@@ -1,0 +1,13 @@
+__pycache__
+.env.example
+.git
+.github
+.idea/
+.venv
+curl.txt
+logs/
+records
+screenshots
+table
+testing_script.py
+TODO.md
