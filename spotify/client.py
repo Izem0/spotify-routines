@@ -324,7 +324,7 @@ class Spotify:
             ignore_index=True,
             inplace=True,
         )
-        df["release_date"] = df["release_date"].astype("datetime64")
+        df["release_date"] = df["release_date"].astype("datetime64[ns]")
         if exclude is not None:
             if not isinstance(exclude, list):
                 exclude = [exclude]
