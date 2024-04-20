@@ -3,17 +3,11 @@
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
-from infisical import InfisicalClient
-
 from spotify.client import Spotify
-from utils import setup_logger, timer
+from utils import load_infisical_env_variables, setup_logger, timer
 
 # load env. variables
-load_dotenv()
-infisical = InfisicalClient(token=os.getenv("INFISICAL_TOKEN"))
-infisical.get_all_secrets(attach_to_os_environ=True)
-
+load_infisical_env_variables()
 
 BASE_DIR = Path(__file__).resolve().parent
 LOGS_DIR = BASE_DIR / "logs/"

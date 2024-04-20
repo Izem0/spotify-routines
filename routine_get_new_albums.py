@@ -4,16 +4,12 @@ import os
 from pathlib import Path
 
 import pandas as pd
+
 from spotify.client import Spotify
-from dotenv import load_dotenv
-from infisical import InfisicalClient
-from utils import send_email, setup_logger, timer
+from utils import load_infisical_env_variables, send_email, setup_logger, timer
 
 # load env. variables
-load_dotenv()
-infisical = InfisicalClient(token=os.getenv("INFISICAL_TOKEN"))
-infisical.get_all_secrets(attach_to_os_environ=True)
-
+load_infisical_env_variables()
 
 BASE_DIR = Path(__file__).resolve().parent
 LOGS_DIR = BASE_DIR / "logs/"
@@ -33,7 +29,9 @@ USER_ID = os.environ.get("USER_ID")
 @timer(LOGGER)
 def main():
     # instantiate class
-    spotify = Spotify(user_id=USER_ID, refresh_token=REFRESH_TOKEN, base64=CLIENT_BASE_64)
+    spotify = Spotify(
+        user_id=USER_ID, refresh_token=REFRESH_TOKEN, base64=CLIENT_BASE_64
+    )
 
     # get artists I follow
     LOGGER.info("Getting favorite artists...")
@@ -72,7 +70,9 @@ def main():
     # send email
     send_email(
         subject=f"{n_albums} new albums found from your favorite artists!",
-        html=df.to_html(columns=["artist_name", "album_name"], bold_rows=True, index=False),
+        html=df.to_html(
+            columns=["artist_name", "album_name"], bold_rows=True, index=False
+        ),
     )
     LOGGER.info(f"Mail sent.")
 
