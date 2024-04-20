@@ -1,10 +1,10 @@
 __pycache__
 .env
 .idea/
+.venv
 curl.txt
 logs/
 records
 table
 testing_script.py
 TODO.md
-venv/
