@@ -37,7 +37,7 @@ def main():
     # first get previous playlist id
     my_playlists = spotify.get_user_playlists()
     my_playlists["cus_release_radar"] = my_playlists["name"].str.contains(
-        "Release Radar \(\S+\s\d+\)", regex=True
+        r"Release Radar \(\S+\s\d+\)", regex=True
     )
     if my_playlists["cus_release_radar"].sum() > 1:
         raise Exception(
