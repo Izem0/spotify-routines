@@ -1,10 +1,15 @@
+from pathlib import Path
+
 from pydantic import EmailStr, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DOT_ENV_FILE = ROOT_DIR / ".env"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_ignore_empty=True, extra="ignore"
+        env_file=DOT_ENV_FILE, env_ignore_empty=True, extra="ignore"
     )
 
     GMAIL_ADDRESS: EmailStr
