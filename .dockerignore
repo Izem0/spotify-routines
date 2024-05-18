@@ -4,6 +4,7 @@ __pycache__
 .github
 .idea/
 .venv
+cmds.md
 curl.txt
 logs/
 records

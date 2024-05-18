@@ -1,5 +1,5 @@
 # Build the image
-$routine = "update_top_songs"  # get_new_albums update_release_radar update_top_songs
+$routine = "get_new_albums"  # get_new_albums update_release_radar update_top_songs
 
 docker build -f "$routine.Dockerfile" --platform linux/amd64 -t "spotify-$routine" .
 

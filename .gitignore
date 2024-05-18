@@ -2,6 +2,7 @@ __pycache__
 .env
 .idea/
 .venv
+cmds.md
 curl.txt
 logs/
 records
