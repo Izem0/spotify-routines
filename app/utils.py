@@ -7,8 +7,6 @@ import warnings
 from email.message import EmailMessage
 
 import yaml
-from dotenv import load_dotenv
-from infisical_client import ClientSettings, InfisicalClient, ListSecretsOptions
 
 
 def send_email(
@@ -86,34 +84,3 @@ def timer(logger=None):
         return wrapper
 
     return decorator
-
-
-def load_infisical_env_variables(
-    client_id: str | None = None,
-    client_secret: str | None = None,
-    environment: str = "dev",
-    project_id: str | None = None,
-) -> None:
-    """Helper function to load env. variables from Infisical"""
-    if client_id is None:
-        client_id = os.getenv("INFISICAL_MACHINE_CLIENT_ID")
-    if client_secret is None:
-        client_secret = os.getenv("INFISICAL_MACHINE_CLIENT_SECRET")
-    if project_id is None:
-        project_id = os.getenv("PROJECT_ID")
-
-    load_dotenv()
-    
-    client = InfisicalClient(
-        ClientSettings(
-            client_id=client_id,
-            client_secret=client_secret,
-        )
-    )
-    client.listSecrets(
-        options=ListSecretsOptions(
-            environment=environment,
-            project_id=project_id,
-            attach_to_process_env=True,
-        ),
-    )

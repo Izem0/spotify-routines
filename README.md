@@ -6,7 +6,7 @@ As an avid music listener, I found certain features lacking in Spotify. Conseque
 ## Routine #1: update_release_radar (running every Friday)
 Release Radar is a native Spotify playlist updated every Friday, intended to help users "catch all the latest music from the artists you follow." However, not all the new songs from the artists I follow were appearing in this playlist. Therefore, I developed a program to rectify this issue.
 
-When running `routine_update_release_radar.py`, the program retrieves songs released by the artists I follow on Spotify within a specific date range (by default, from 6 days ago up to today's date) and updates a playlist in my library by adding these newly discovered songs.
+When running `routines/update_release_radar.py`, the program retrieves songs released by the artists I follow on Spotify within a specific date range (by default, from 6 days ago up to today's date) and updates a playlist in my library by adding these newly discovered songs.
 
 Here, you can observe the creation of the playlist:
 

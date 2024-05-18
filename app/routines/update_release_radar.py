@@ -1,37 +1,35 @@
 """Get new songs from my favorite artists and add them to a playlist"""
 
-import os
+import sys
 from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.append(ROOT_DIR.as_posix())
 
 import pandas as pd
 
-from spotify.client import Spotify
-from utils import load_infisical_env_variables, setup_logger, timer
+from app.config import settings
+from app.spotify.client import Spotify
+from app.utils import setup_logger, timer
 
-# load env. variables
-load_infisical_env_variables()
-
-BASE_DIR = Path(__file__).resolve().parent
-LOGS_DIR = BASE_DIR / "logs/"
+LOGS_DIR = ROOT_DIR / "app" / "logs/"
 LOGS_DIR.mkdir(exist_ok=True)
 LOGGER = setup_logger(
     "spotify",
-    log_config_file=BASE_DIR / "logging.yaml",
+    log_config_file=ROOT_DIR / "app" / "logging.yaml",
     log_file=LOGS_DIR / "spotify.log",
 )
 END_DATE = pd.Timestamp.utcnow().date()
 START_DATE = END_DATE - pd.Timedelta(days=6)
-REFRESH_TOKEN = os.environ.get("SPOTIFY_REFRESH_TOKEN")
-CLIENT_BASE_64 = os.environ.get("SPOTIFY_BASE64")
-USER_ID = os.environ.get("USER_ID")
-RELEASE_RADAR_ID = os.environ.get("RELEASE_RADAR_ID")
 
 
 @timer(LOGGER)
-def main():
+def handler(event=None, context=None):
     # instantiate class
     spotify = Spotify(
-        user_id=USER_ID, refresh_token=REFRESH_TOKEN, base64=CLIENT_BASE_64
+        user_id=settings.USER_ID,
+        refresh_token=settings.SPOTIFY_REFRESH_TOKEN,
+        base64=settings.SPOTIFY_CLIENT_BASE_64,
     )
 
     # first get previous playlist id
@@ -69,7 +67,9 @@ def main():
 
     # get songs from release radar to not add them
     LOGGER.info("Getting songs from release radar ...")
-    radar_albums = spotify.get_songs_from_playlist(RELEASE_RADAR_ID)[["id", "name"]]
+    radar_albums = spotify.get_songs_from_playlist(settings.RELEASE_RADAR_ID)[
+        ["id", "name"]
+    ]
 
     # songs that are in new_releases but not in radar_albums
     merge = new_albums.merge(radar_albums, on="name", how="left", indicator=True)
@@ -99,4 +99,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    handler()

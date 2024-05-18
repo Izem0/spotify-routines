@@ -4,8 +4,8 @@ import backoff
 import pandas as pd
 import requests
 
-from spotify.refresh import Refresh
-from spotify.utils import backoff_hdlr, remove_nones, n_chunks
+from app.spotify.refresh import Refresh
+from app.spotify.utils import backoff_hdlr, remove_nones, n_chunks
 
 
 class Spotify:
