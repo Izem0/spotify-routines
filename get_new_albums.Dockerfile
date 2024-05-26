@@ -8,7 +8,7 @@ FROM python:3.12.0 as build-image
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
 
-# Copy function code
+# Copy requirements
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 COPY requirements.txt ${FUNCTION_DIR}
@@ -17,7 +17,9 @@ COPY requirements.txt ${FUNCTION_DIR}
 RUN pip install --target ${FUNCTION_DIR} awslambdaric \
     && pip install --target ${FUNCTION_DIR} -r requirements.txt
 
+# Copy function code
 COPY . ${FUNCTION_DIR}
+COPY .env ${LAMBDA_TASK_ROOT}
 
 # Use a slim version of the base Python image to reduce the final image size
 FROM python:3.12-slim

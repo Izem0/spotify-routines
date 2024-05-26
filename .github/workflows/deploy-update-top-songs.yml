@@ -24,6 +24,15 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Create .env file
+        run: |
+          echo "GMAIL_ADDRESS=${{ secrets.GMAIL_ADDRESS}}" >> .env
+          echo "GMAIL_PASSWORD=${{ secrets.GMAIL_PASSWORD}}" >> .env
+          echo "RELEASE_RADAR_ID=${{ secrets.RELEASE_RADAR_ID}}" >> .env
+          echo "SPOTIFY_CLIENT_BASE_64=${{ secrets.SPOTIFY_CLIENT_BASE_64}}" >> .env
+          echo "SPOTIFY_REFRESH_TOKEN=${{ secrets.SPOTIFY_REFRESH_TOKEN}}" >> .env
+          echo "USER_ID=${{ secrets.USER_ID}}" >> .env
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:

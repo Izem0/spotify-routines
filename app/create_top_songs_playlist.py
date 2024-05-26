@@ -53,7 +53,7 @@ def create_this_is_playlist(artist_name: str, n_tracks: int = 50):
 
 @timer(LOGGER)
 def main():
-    artists = ["Taylor Swift"]
+    artists = ["GLK"]
     for artist in artists:
         create_this_is_playlist(artist_name=artist)
 
