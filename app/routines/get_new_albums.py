@@ -12,13 +12,7 @@ from app.config import settings
 from app.spotify.client import Spotify
 from app.utils import send_email, setup_logger, timer
 
-LOGS_DIR = ROOT_DIR / "app" / "logs/"
-LOGS_DIR.mkdir(exist_ok=True)
-LOGGER = setup_logger(
-    "spotify",
-    log_config_file=ROOT_DIR / "app" / "logging.yaml",
-    log_file=LOGS_DIR / "spotify.log",
-)
+LOGGER = setup_logger("spotify-routines")
 END_DATE = pd.Timestamp.utcnow().date()
 START_DATE = END_DATE - pd.Timedelta(days=6)
 

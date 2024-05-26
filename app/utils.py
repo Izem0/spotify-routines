@@ -2,11 +2,9 @@ import logging
 import logging.config
 import os
 import smtplib
+import sys
 import time
-import warnings
 from email.message import EmailMessage
-
-import yaml
 
 
 def send_email(
@@ -40,28 +38,24 @@ def send_email(
 
 
 def setup_logger(
-    logger_name: str, log_config_file: str, log_file: str = "file1.log"
-) -> logging.Logger:
-    if not log_config_file:
-        raise ValueError("Please provide a log configuration file path.")
+    name: str = __name__,
+    datefmt: str = "%Y-%m-%d %H:%M:%S%z",
+    handlers: list = None,
+    level="INFO",
+):
+    """Generate a logger"""
+    if not handlers:
+        handlers = [logging.StreamHandler(sys.stdout)]  # print to console
 
-    with open(log_config_file, "r") as f:
-        config = yaml.safe_load(f.read())
+    logging.basicConfig(
+        format="%(name)s | [%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s",
+        datefmt=datefmt,
+        handlers=handlers,
+    )
 
-        # set the filename for the RotatingFileHandler
-        config["handlers"]["file"]["filename"] = log_file
-
-        # apply logging config to logging
-        logging.config.dictConfig(config)
-
-        if logger_name not in config["loggers"]:
-            warnings.warn(
-                "Beware! The logger name you provided does not match any logger defined in the logging config file. "
-                f"({list(config['loggers'].keys())}). Using the root logger."
-            )
-            logger_name = "root"
-
-        return logging.getLogger(logger_name)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    return logger
 
 
 def timer(logger=None):
