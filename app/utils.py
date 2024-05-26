@@ -8,8 +8,8 @@ from email.message import EmailMessage
 
 
 def send_email(
-    sender="izem.mangione@gmail.com",
-    receipient="izem.mangione@gmail.com",
+    sender: str,
+    receipient: str,
     subject="",
     body="",
     html=None,

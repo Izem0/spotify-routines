@@ -1,5 +1,6 @@
-"""Send myself an email if my favorites artists released a new song/album in the past week (to run every friday)."""
+"""Send myself an email if my favorites artists released a new album in the past week (to run every friday)."""
 
+import os
 import sys
 from pathlib import Path
 
@@ -48,7 +49,13 @@ def handler(event=None, context=None):
     df = df.explode("album_id").dropna(subset="album_id")
 
     if df.empty:
-        send_email(subject=f"No new albums from your favorite artists")
+        msg = "No new albums from your favorite artists"
+        LOGGER.info(msg)
+        send_email(
+            sender=settings.GMAIL_ADDRESS,
+            receipient=settings.GMAIL_ADDRESS,
+            subject=msg,
+        )
         return
 
     df["album_name"] = df["album_id"].apply(lambda x: spotify.get_album(x)["name"])
