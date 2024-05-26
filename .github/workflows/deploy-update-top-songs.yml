@@ -1,4 +1,4 @@
-name: deploy get-new-albums
+name: deploy update-top-songs
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
         run: |
           # Build a docker container and push it to ECR 
           echo "image=$IMAGE_NAME"
-          docker build -f get_new_albums.Dockerfile --platform linux/amd64 -t $IMAGE_NAME .
+          docker build -f update_top_songs.Dockerfile --platform linux/amd64 -t $IMAGE_NAME .
           docker push $IMAGE_NAME
 
   deploy_to_lambda:
