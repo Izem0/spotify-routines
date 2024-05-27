@@ -1,4 +1,4 @@
-"""Get new songs from my favorite artists and add them to a playlist"""
+"""Get new songs from my favorite artists and update custom 'Release Radar' playlist"""
 
 import sys
 from pathlib import Path

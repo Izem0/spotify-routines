@@ -1,4 +1,4 @@
-"""Update exisiting 'Top songs' playlists."""
+"""Update exisiting 'Top songs' playlists"""
 
 import sys
 from multiprocessing import Pool
