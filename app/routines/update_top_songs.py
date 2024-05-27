@@ -1,6 +1,7 @@
 """Update exisiting 'Top songs' playlists."""
 
 import sys
+from multiprocessing import Pool
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -31,6 +32,8 @@ def update_one_playlist(playlist_id: str, artist_name: str):
     # update existing songs' playlist
     SPOTIFY.update_playlist(playlist_id, uris=songs_uri)
 
+    return artist_name
+
 
 @timer(LOGGER)
 def handler(event=None, context=None):
@@ -40,10 +43,16 @@ def handler(event=None, context=None):
     playlists = SPOTIFY.get_user_playlists(contains="Top Songs")
     # get artist name
     playlists["artist"] = [x.split(":")[0] for x in playlists["name"]]
-    # loop trough playlists & update them
-    for playlist_id, artist_name in zip(playlists["id"], playlists["artist"]):
-        update_one_playlist(playlist_id, artist_name)
-        LOGGER.info(f"Updated {artist_name} 'Top Songs' playlist")
+    # # loop trough playlists & update them
+    # for playlist_id, artist_name in zip(playlists["id"], playlists["artist"]):
+    #     update_one_playlist(playlist_id, artist_name)
+    #     LOGGER.info(f"Updated {artist_name} 'Top Songs' playlist")
+    with Pool() as pool:
+        result = pool.starmap(
+            update_one_playlist, zip(playlists["id"], playlists["artist"])
+        )
+        for artist_name in result:
+            LOGGER.info(f"Updated {artist_name} 'Top Songs' playlist")
 
 
 if __name__ == "__main__":
