@@ -51,11 +51,11 @@ def handler(event=None, context=None):
     if df.empty:
         msg = "No new albums from your favorite artists"
         LOGGER.info(msg)
-        send_email(
-            sender=settings.GMAIL_ADDRESS,
-            receipient=settings.GMAIL_ADDRESS,
-            subject=msg,
-        )
+        # send_email(
+        #     sender=settings.GMAIL_ADDRESS,
+        #     receipient=settings.GMAIL_ADDRESS,
+        #     subject=msg,
+        # )
         return
 
     df["album_name"] = df["album_id"].apply(lambda x: spotify.get_album(x)["name"])
@@ -68,13 +68,13 @@ def handler(event=None, context=None):
     LOGGER.info(f"{n_albums} albums liked")
 
     # send email
-    send_email(
-        subject=f"{n_albums} new albums found from your favorite artists!",
-        html=df.to_html(
-            columns=["artist_name", "album_name"], bold_rows=True, index=False
-        ),
-    )
-    LOGGER.info(f"Mail sent.")
+    # send_email(
+    #     subject=f"{n_albums} new albums found from your favorite artists!",
+    #     html=df.to_html(
+    #         columns=["artist_name", "album_name"], bold_rows=True, index=False
+    #     ),
+    # )
+    # LOGGER.info(f"Mail sent.")
 
 
 if __name__ == "__main__":
