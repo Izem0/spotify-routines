@@ -35,13 +35,19 @@ def update_one_playlist(playlist_id: str, artist_name: str):
 
 
 @timer(LOGGER)
-def handler(event=None, context=None):
+def handler(event: dict = None, context: dict = None) -> None:
     LOGGER.info("Script is running")
 
     # get artists for which I have a 'Top Songs' playlist
     playlists = SPOTIFY.get_user_playlists(contains="Top Songs")
-    # get artist name
+
+    # QUICKFIX: randomly select 10 playlists to be updated
+    # because lambda times out after 15 min so we cannot update all playlists
+    playlists = playlists.sample(n=10)
+
+    # get artists names
     playlists["artist"] = [x.split(":")[0] for x in playlists["name"]]
+
     # loop trough playlists & update them
     for playlist_id, artist_name in zip(playlists["id"], playlists["artist"]):
         update_one_playlist(playlist_id, artist_name)
