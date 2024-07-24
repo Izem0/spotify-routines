@@ -1,5 +1,6 @@
 """Update exisiting 'Top songs' playlists"""
 
+from datetime import datetime
 import sys
 from pathlib import Path
 
@@ -30,6 +31,14 @@ def update_one_playlist(playlist_id: str, artist_name: str):
 
     # update existing songs' playlist
     SPOTIFY.update_playlist(playlist_id, uris=songs_uri)
+
+    # update playlist's details
+    desc = (
+        f"Top songs of {artist_name}, "
+        "ordered by popularity from highest to lowest. "
+        f"Last update: {datetime.now().strftime("%Y-%m-%d")}"
+    )
+    SPOTIFY.change_playlist_details(playlist_id, description=desc)
 
     return artist_name
 
