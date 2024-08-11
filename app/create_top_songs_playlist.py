@@ -37,7 +37,7 @@ def create_this_is_playlist(artist_name: str, n_tracks: int = 50):
     playlist_id = spotify.create_playlist(
         name=f"{artist_name}: Top Songs",
         description=f"Top songs of {artist_name}, ordered by popularity from highest to lowest. "
-        f"This playlist is updated every friday at 00:00:00 UTC.",
+        f"This playlist is updated every day.",
     )
 
     # add songs to the playlist
@@ -47,7 +47,7 @@ def create_this_is_playlist(artist_name: str, n_tracks: int = 50):
 
 @timer(LOGGER)
 def main():
-    artists = ["GLK"]
+    artists = ["Snoop Dogg"]
     for artist in artists:
         create_this_is_playlist(artist_name=artist)
 
