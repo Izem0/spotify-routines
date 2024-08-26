@@ -222,10 +222,10 @@ class Spotify:
         self._put(f"playlists/{playlist_id}/tracks", json=data)
 
     def get_user_playlists(
-        self, contains: str = None, limit: int = 50, offset: int = 0
+        self, regex: str = None, limit: int = 50, offset: int = 0
     ) -> pd.DataFrame:
         """Get a list of the playlists owned or followed by the current Spotify user.
-        Optionally provide 'contains', a regex pattern to filter results.
+        Optionally provide 'regex', a regex pattern to filter results.
         Adapted from https://developer.spotify.com/documentation/web-api/reference/get-a-list-of-current-users-playlists
         """
         params = {"limit": limit, "offset": offset}
@@ -239,8 +239,8 @@ class Spotify:
             params["offset"] += params["limit"]
 
         df = pd.DataFrame(ls)
-        if contains is not None:
-            df = df.query(f"name.str.contains('{contains}')")
+        if regex is not None:
+            df = df.query(f"name.str.contains('{regex}')")
 
         return df
 

@@ -48,7 +48,7 @@ def handler(event: dict = None, context: dict = None) -> None:
     LOGGER.info("Script is running")
 
     # get artists for which I have a 'Top Songs' playlist
-    playlists = SPOTIFY.get_user_playlists(contains="Top Songs")
+    playlists = SPOTIFY.get_user_playlists(regex="Top Songs")
 
     # QUICKFIX: randomly select 10 playlists to be updated
     # because lambda times out after 15 min so we cannot update all playlists
