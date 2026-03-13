@@ -3,14 +3,15 @@
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-sys.path.append(ROOT_DIR.as_posix())
-
 import pandas as pd
 
-from app.config import settings
-from app.spotify.client import Spotify
-from app.utils import setup_logger, timer
+ROOT_DIR = Path(__file__).resolve().parents[1].as_posix()
+sys.path.append(ROOT_DIR)
+
+from config import settings  # noqa: E402
+from lib.client import Spotify  # noqa: E402
+from lib.logger import setup_logger  # noqa: E402
+from lib.timer import timer  # noqa: E402
 
 LOGGER = setup_logger("spotify-routines")
 END_DATE = pd.Timestamp.utcnow().date()
@@ -18,7 +19,7 @@ START_DATE = END_DATE - pd.Timedelta(days=6)
 
 
 @timer(LOGGER)
-def handler(event=None, context=None):
+def main():
     # instantiate class
     spotify = Spotify(
         user_id=settings.USER_ID,
@@ -93,4 +94,4 @@ def handler(event=None, context=None):
 
 
 if __name__ == "__main__":
-    handler()
+    main()

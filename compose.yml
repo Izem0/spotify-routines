@@ -1,0 +1,26 @@
+services:
+
+  like_new_albums:
+    build: .
+    env_file:
+      - .env
+    command: uv run src/jobs/like_new_albums.py
+    logging: &default-logging
+      driver: syslog
+      options:
+        syslog-address: ${SYSLOG_ADDRESS}
+        tag: "{{.Name}}/{{.ID}}"
+
+  update_release_radar:
+    build: .
+    env_file:
+      - .env
+    command: uv run src/jobs/update_release_radar.py
+    logging: *default-logging
+
+  update_top_songs:
+    build: .
+    env_file:
+      - .env
+    command: uv run src/jobs/update_top_songs.py
+    logging: *default-logging

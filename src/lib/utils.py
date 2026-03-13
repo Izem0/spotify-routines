@@ -1,4 +1,3 @@
-
 def backoff_hdlr(details: dict) -> None:
     print(
         f"Backing off {details['wait']:0.1f} seconds after {details['tries']} tries "

@@ -1,10 +1,12 @@
 """Create a Spotify playlist with the top songs of a specific artist."""
 
 import jmespath
-from config import settings
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyOAuth
-from utils import setup_logger, timer
+
+from config import settings
+from lib.logger import setup_logger
+from lib.timer import timer
 
 ARTIST_NAME = "Asfar Shamsi"
 log = setup_logger("spotify-top-songs")

@@ -1,0 +1,10 @@
+services:
+
+  like_new_albums:
+    logging: !reset
+
+  update_release_radar:
+   logging: !reset
+
+  update_top_songs:
+    logging: !reset

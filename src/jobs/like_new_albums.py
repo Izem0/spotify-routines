@@ -1,17 +1,17 @@
-"""Send myself an email if my favorites artists released a new album in the past week (to run every friday)."""
+"""Like new album(s) from my favorite artists"""
 
-import os
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-sys.path.append(ROOT_DIR.as_posix())
-
 import pandas as pd
 
-from app.config import settings
-from app.spotify.client import Spotify
-from app.utils import send_email, setup_logger, timer
+ROOT_DIR = Path(__file__).resolve().parents[1].as_posix()
+sys.path.append(ROOT_DIR)
+
+from config import settings  # noqa: E402
+from lib.client import Spotify  # noqa: E402
+from lib.logger import setup_logger  # noqa: E402
+from lib.timer import timer  # noqa: E402
 
 LOGGER = setup_logger("spotify-routines")
 END_DATE = pd.Timestamp.utcnow().date()
@@ -19,7 +19,7 @@ START_DATE = END_DATE - pd.Timedelta(days=6)
 
 
 @timer(LOGGER)
-def handler(event=None, context=None):
+def main():
     # instantiate class
     spotify = Spotify(
         user_id=settings.USER_ID,
@@ -61,11 +61,14 @@ def handler(event=None, context=None):
     df["album_name"] = df["album_id"].apply(lambda x: spotify.get_album(x)["name"])
     df.drop_duplicates(subset=["artist_name", "album_name"], inplace=True)
     n_albums = len(df["album_id"].unique())
-    LOGGER.info(f"Found {n_albums} albums")
+    LOGGER.info(f"Found {n_albums} new album(s) ({df['album_name'].tolist()})")
 
     # like those albums
-    spotify.save_albums(ids=df["album_id"].to_list())
-    LOGGER.info(f"{n_albums} albums liked")
+    r = spotify.save_albums(ids=df["album_id"].to_list())
+    if not r.ok:
+        LOGGER.error(f"Error while saving albums: {r.text}")
+        return
+    LOGGER.info(f"{n_albums} new album(s) liked")
 
     # send email
     # send_email(
@@ -78,4 +81,4 @@ def handler(event=None, context=None):
 
 
 if __name__ == "__main__":
-    handler()
+    main()

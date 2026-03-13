@@ -3,9 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_ignore_empty=True, extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", extra="forbid")
 
     GMAIL_ADDRESS: EmailStr
     GMAIL_PASSWORD: SecretStr
@@ -19,6 +17,8 @@ class Settings(BaseSettings):
     SPOTIPY_CLIENT_SECRET: str
     SPOTIPY_REDIRECT_URI: str
     SPOTIPY_SCOPE: str
+
+    SYSLOG_ADDRESS: str
 
 
 settings = Settings()

@@ -4,8 +4,8 @@ import backoff
 import pandas as pd
 import requests
 
-from app.spotify.refresh import Refresh
-from app.spotify.utils import backoff_hdlr, remove_nones, n_chunks
+from lib.refresh import Refresh
+from lib.utils import backoff_hdlr, n_chunks, remove_nones
 
 
 class Spotify:
@@ -59,12 +59,14 @@ class Spotify:
     #############
     # ENDPOINTS #
     #############
-    def get_favorite_artists(self, return_: str = "id", type: str = "artist") -> list[str]:
+    def get_favorite_artists(
+        self, return_: str = "id", type: str = "artist"
+    ) -> list[str]:
         """Get ids/name of the artists I follow.
         :return_: Can be one in ['id', 'name']
         Adapted from https://developer.spotify.com/documentation/web-api/reference/#/operations/get-followed"""
-        if return_ not in ['id', 'name']:
-            raise ValueError(f"'return_' parameter should be one of ['id', 'name'].")
+        if return_ not in ["id", "name"]:
+            raise ValueError("'return_' parameter should be one of ['id', 'name'].")
         # loop to get all artists id (limit: 50 artists per request)
         artists = []
         after = None
@@ -101,8 +103,8 @@ class Spotify:
         if start_date is None:
             start_date = (pd.Timestamp.utcnow() - pd.Timedelta(days=7)).date()
         if end_date is None:
-            end_date = pd.Timestamp.utcnow().date(),
-        
+            end_date = (pd.Timestamp.utcnow().date(),)
+
         params = {
             "market": market,
             "limit": limit,
@@ -114,7 +116,7 @@ class Spotify:
 
         if df.empty:
             return df
-        
+
         df["various_artists"] = df["artists"].apply(
             lambda x: x[0]["name"] == "Various Artists"
         )  # flag 'various artists' albums
@@ -131,7 +133,7 @@ class Spotify:
         return r.json()
 
     def get_tracks_from_album(
-        self, album_id: str, market: str = "FR", limit: int = 50,  offset: int = 0
+        self, album_id: str, market: str = "FR", limit: int = 50, offset: int = 0
     ) -> pd.DataFrame:
         """Get Spotify catalog information about an album's tracks.
         Conform to original https://developer.spotify.com/documentation/web-api/reference/#/operations/get-an-albums-tracks"""
@@ -140,12 +142,14 @@ class Spotify:
         return pd.DataFrame(r.json()["items"])
 
     def _get_tracks_uris_from_album(
-        self, album_id: str, market: str = "FR", limit: int = 50,  offset: int = 0
+        self, album_id: str, market: str = "FR", limit: int = 50, offset: int = 0
     ) -> list[str]:
         """Return tracks uris from an album."""
-        tracks = self.get_tracks_from_album(album_id, market=market, limit=limit, offset=offset)
+        tracks = self.get_tracks_from_album(
+            album_id, market=market, limit=limit, offset=offset
+        )
         return tracks["uri"].to_list()
-    
+
     def get_devices(self) -> dict:
         """Get information about a user’s available devices.
         Conform to original https://developer.spotify.com/documentation/web-api/reference/get-a-users-available-devices"""
@@ -244,11 +248,12 @@ class Spotify:
 
         return df
 
-    def save_albums(self, ids: list[str]) -> None:
+    def save_albums(self, ids: list[str]) -> requests.Response:
         """Save one or more albums to the current user's 'Your Music' library.
         Conform to original https://developer.spotify.com/documentation/web-api/reference/#/operations/save-albums-user
         """
-        self._put("me/albums", json=ids)
+        r = self._put("me/albums", params={"ids": ",".join(ids)})
+        return r
 
     def get_artist_id(self, name: str) -> str:
         """Try to find an artist's id based on their name."""
@@ -413,7 +418,7 @@ class Spotify:
         """Either reorder or replace items in a playlist.
         Adapted from https://developer.spotify.com/documentation/web-api/reference/reorder-or-replace-playlists-tracks
         """
-        params = {"uris": ','.join(uris)}
+        params = {"uris": ",".join(uris)}
         r = self._put(f"playlists/{playlist_id}/tracks", params=params)
         if not r.ok:
             raise Exception(r.status_code, r.reason, r.text)
