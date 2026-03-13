@@ -15,5 +15,10 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_BASE_64: str
     SPOTIFY_REFRESH_TOKEN: str
 
+    SPOTIPY_CLIENT_ID: str
+    SPOTIPY_CLIENT_SECRET: str
+    SPOTIPY_REDIRECT_URI: str
+    SPOTIPY_SCOPE: str
+
 
 settings = Settings()
